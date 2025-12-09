@@ -42,7 +42,7 @@ static uint32_t on_emu_frame(const int eventHandle, void *pEventData)
 		int healthSettingValue = -1;
 		bigpemu_get_setting_value(&healthSettingValue, sHealthSettingHandle);
 
-		if (healthSettingValue)
+		if (healthSettingValue > 0)
 		{
 			// Full energy.
 			bigpemu_jag_write16(KASUMI_NINJA_ENERGY_ADDR, 0xFFFF);
@@ -74,4 +74,5 @@ void bigp_shutdown()
 	sOnEmuFrame = -1;
 
 	sHealthSettingHandle = -1;
+
 }
