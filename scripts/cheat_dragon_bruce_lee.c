@@ -17,6 +17,7 @@
 //     C) 0x4194
 //     D) 0x4198
 #define DRAGON_BRUCE_HEALTH_ADDR    0x00004102
+#define DRAGON_ENEMY_HEALTH_ADDR    0x000042E6
 
 #define DRAGON_BRUCE_CHI_ADDR       0x0000413A
 #define DRAGON_BRUCE_BAR_VALUE      0x0200
@@ -35,8 +36,6 @@ static int32_t sOnLoadEvent = INVALID;
 static int32_t sOnEmuFrame = INVALID;
 static int32_t sMcFlags = 0;
 static const int32_t skMcFlag_Loaded = (1 << 0);
-
-static uint64_t lastUpdateFrameCount = 0;
 
 // Setting handles.
 static int sHealthSettingHandle = INVALID;
@@ -68,21 +67,10 @@ static uint32_t on_emu_frame(const int eventHandle, void* pEventData)
 
       if (healthSettingValue > 0)
       {
-         // Only max out health every n seconds.
-         //
-         // Updating every frame, causes an infinite loop at end-of-round,
-         // since end-of-round decrements health down to zero as part
-         // of score tally.
-         //
-         // N seconds is a workaround to allow the vote tally to fully
-         // decrement health, but still allow health to continually get
-         // maxed out.  Player just needs to make sure they don't get
-         // their health bar completely drained within n number of seconds.
-         const const uint64_t newFrameCount = bigpemu_jag_get_frame_count();
-         if (newFrameCount > (lastUpdateFrameCount + (DRAGON_FRAMES_PER_SECOND * DRAGON_NUM_SECONDS)))
+         // Avoid uint16_t-assignment-memory-clobbering-bug
+         uint32_t enemyHealth = (bigpemu_jag_read8(DRAGON_ENEMY_HEALTH_ADDR) << 8) | bigpemu_jag_read8(DRAGON_ENEMY_HEALTH_ADDR+1);
+         if (enemyHealth > 0)
          {
-            lastUpdateFrameCount = newFrameCount;
-
             bigpemu_jag_write16(DRAGON_BRUCE_HEALTH_ADDR, DRAGON_BRUCE_BAR_VALUE);
          }
       }
@@ -93,7 +81,11 @@ static uint32_t on_emu_frame(const int eventHandle, void* pEventData)
          // Press '1' or '4', to return to starting Mantis Mode.
          // Player should really read the manual for this game, or
          // player will likely miss out on major features of game.
-         bigpemu_jag_write16(DRAGON_BRUCE_CHI_ADDR, DRAGON_BRUCE_BAR_VALUE);
+         uint32_t enemyHealth = (bigpemu_jag_read8(DRAGON_ENEMY_HEALTH_ADDR) << 8) | bigpemu_jag_read8(DRAGON_ENEMY_HEALTH_ADDR+1);
+         if (enemyHealth > 0)
+         {
+            bigpemu_jag_write16(DRAGON_BRUCE_CHI_ADDR, DRAGON_BRUCE_BAR_VALUE);
+         }
       }
    }
    return 0;

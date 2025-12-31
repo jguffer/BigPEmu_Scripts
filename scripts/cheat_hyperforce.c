@@ -19,7 +19,8 @@
 // 50,000 ought to help out.  Keep value under 2^16.
 #define HFORCE_MONEY_VALUE    50000
 
-//score_addr=0x000EF08B //-14 bytes for score (for display purposes 2 zeros trail.)
+// Display has 2 trailing zeros.
+#define SCORE_ADDR            0x000EF08A
 
 // Found by manually inspecting/needling of memory, with a bit of guesswork, after
 // locating HFORCE_LIVES_ADDR, HFORCE_HEALTH_ADDR, HFORCE_MONEY_ADDR.
@@ -73,8 +74,6 @@ static int32_t sOnLoadEvent = INVALID;
 static int32_t sOnEmuFrame = INVALID;
 static int32_t sMcFlags = 0;
 static const int32_t skMcFlag_Loaded = (1 << 0);
-
-static int sLevelDelayCounter = -1;
 
 // Setting handles.
 static int sLivesSettingHandle = INVALID;
@@ -159,16 +158,10 @@ static uint32_t on_emu_frame(const int eventHandle, void* pEventData)
 
       if (levelSettingValue > -1)
       {
-         if (sLevelDelayCounter < HFORCE_LEVEL_DELAY_TICKS)
+         // Avoid uint16_t-assignment-memory-clobbering-bug.
+         uint32_t score = (bigpemu_jag_read8(SCORE_ADDR) << 8) | bigpemu_jag_read8(SCORE_ADDR + 1);
+         if (0 == score)
          {
-            sLevelDelayCounter += 1;
-         }
-         if (HFORCE_LEVEL_DELAY_TICKS == sLevelDelayCounter)
-         {
-            // Entering demo mode prevents this cheat from working.  Someone else can fix this, if they care enough.
-            // As it stands, if you know to start game before demo mode, and start game before demo mode, then level skip cheat works.
-            printf_notify("Applying skip level cheat.  Entering demo mode will prevent cheat from taking effect.\n");
-
             // Level values are 0 through 5, 8 through 13, 16 through 21, 24 through 29.
             // Convert from a BigPEmu setting value of 0 through 23, to level values in comment directly above.
             const int numLevelsPerWorld = 6;
@@ -178,10 +171,6 @@ static uint32_t on_emu_frame(const int eventHandle, void* pEventData)
             bigpemu_jag_write8(HFORCE_LEVEL_ADDR, convertedLevelValue);
 
             //TODO:  Someone test this further.  Currently very little testing of level skip has been done.
-            //TODO:  Would polling score or money be better approach then time delay?
-
-            // Make sure this block is only executed once.
-            sLevelDelayCounter += 1;
          }
       }
    }
@@ -216,7 +205,6 @@ void bigp_shutdown()
    bigpemu_unregister_event(pMod, sOnEmuFrame);
    sOnEmuFrame = INVALID;
 
-   sLevelDelayCounter = 1;
    sLivesSettingHandle = INVALID;
    sHealthSettingHandle = INVALID;
    sMoneySettingHandle = INVALID;

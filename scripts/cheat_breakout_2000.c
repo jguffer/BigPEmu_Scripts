@@ -13,6 +13,7 @@
 #define B2K_NUM_BALLS_VALUE      6
 
 // Found by counting bytes (as specified by source code) backwards from above. 
+#define B2K_SCORE_ADDR           0x001D2FA8
 #define B2K_ATTRACT_ADDR         0x001D1A22
 #define B2K_CATCH_ADDR           B2K_ATTRACT_ADDR + 4
 #define B2K_CANNON_ADDR          B2K_ATTRACT_ADDR + 5
@@ -87,8 +88,6 @@ static int sCannonSettingHandle = INVALID;
 static int sCracksSettingHandle = INVALID;
 static int sSplitsSettingHandle = INVALID;
 static int sLevelSettingHandle = INVALID;
-
-static int sSkipLevelFinished = 0;
 
 static uint32_t on_sw_loaded(const int eventHandle, void* pEventData)
 {
@@ -229,28 +228,19 @@ static uint32_t on_emu_frame(const int eventHandle, void* pEventData)
 
       if (levelSettingValue > 0)
       {
-         // Only do this, if haven't already finished skipping to the level specified in user BigPEmu GUI setting.
-         if (!sSkipLevelFinished)
+         // Overwrite level information until player has non-zero score.
+         const uint32_t score = bigpemu_jag_read32(B2K_SCORE_ADDR);
+         if (0 == score)
          {
-            // Stop overwriting values once modePLAY has begun.
-            const uint8_t gameMode = bigpemu_jag_read8(B2K_GAME_MODE_ADDR);
-            if (gameMode != ((uint8_t) modePLAY))
-            {
-               // Writing here makes playfield/screen advance, when playing level for first time since starting.
-               // However, after winning that playfield/screen, playfield/screens start back at the beginning.
-               bigpemu_jag_write8(B2K_SCREENCOUNT_ADDR, levelSettingValue);
+            // Writing here makes playfield/screen advance, when playing level for first time since starting.
+            // However, after winning that playfield/screen, playfield/screens start back at the beginning.
+            bigpemu_jag_write8(B2K_SCREENCOUNT_ADDR, levelSettingValue);
 
-               // Writing here makes it advance after beat first level. But won't advance prior to beating the
-               // first level.
-               bigpemu_jag_write8(B2K_SCREENCOUNT_ADDR_B, levelSettingValue);
+            // Writing here makes it advance after beat first level. But won't advance prior to beating the
+            // first level.
+            bigpemu_jag_write8(B2K_SCREENCOUNT_ADDR_B, levelSettingValue);
 
-               // Really looks like have to write to both addresses.
-            }
-            else
-            {
-               // Stop overwriting values, so game logic can increment playfields/screens correctly.
-               sSkipLevelFinished = 1;
-            }
+            // Really looks like have to write to both addresses.
          }
       }
    }
@@ -304,6 +294,4 @@ void bigp_shutdown()
    sCracksSettingHandle = INVALID;
    sSplitsSettingHandle = INVALID;
    sLevelSettingHandle = INVALID;
-
-   sSkipLevelFinished = 0;
 }

@@ -50,8 +50,6 @@ static int sShieldsSettingHandle = INVALID;
 static int sHealthSettingHandle = INVALID;
 static int sLevelSettingHandle = INVALID;
 
-static int sLevelDelayCounter = -1;
-
 static uint32_t on_sw_loaded(const int eventHandle, void* pEventData)
 {
    const uint64_t hash = bigpemu_get_loaded_fnv1a64();
@@ -112,7 +110,8 @@ static uint32_t on_emu_frame(const int eventHandle, void* pEventData)
 
       if (levelSettingValue > 1)
       {
-         if (sLevelDelayCounter <= PSE_LEVEL_WINDOW_TICKS)
+         uint32_t score = bigpemu_jag_read32(PSE_SCORE_ADDR);
+         if (0 == score)
          {
             // Overwrite level information for set number of ticks.
             //
@@ -128,8 +127,6 @@ static uint32_t on_emu_frame(const int eventHandle, void* pEventData)
             //       cheat enabled.
             bigpemu_jag_write8(PSE_LEVEL_ADDRA, levelSettingValue - 1);
             bigpemu_jag_write8(PSE_LEVEL_ADDRB, levelSettingValue - 1);
-
-            ++sLevelDelayCounter;
          }
       }
    }
@@ -168,6 +165,4 @@ void bigp_shutdown()
    sShieldsSettingHandle = INVALID;
    sHealthSettingHandle = INVALID;
    sLevelSettingHandle = INVALID;
-
-   sLevelDelayCounter = INVALID;
 }

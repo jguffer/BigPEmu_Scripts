@@ -74,8 +74,6 @@ static int32_t sOnEmuFrame = INVALID;
 static int32_t sMcFlags = 0;
 static const int32_t skMcFlag_Loaded = (1 << 0);
 
-static int sLevelDelayCounter = -1;
-
 // Setting handles.
 static int sLivesSettingHandle = INVALID;
 static int sBombsSettingHandle = INVALID;
@@ -177,17 +175,11 @@ static uint32_t on_emu_frame(const int eventHandle, void* pEventData)
       bigpemu_get_setting_value(&levelSettingValue, sLevelSettingHandle);
       if (levelSettingValue > 0)
       {
-         // Only set level for a limited amount of time, so that after
-         // completion of level, the game can increment the level value
-         // to the next level.
-         if (sLevelDelayCounter < RAIDEN_LEVEL_DELAY_TICKS)
+         uint32_t score = bigpemu_jag_read32(RAIDEN_P1_SCORE_ADDR);
+         if (0 == score)
          {
             bigpemu_jag_write8(RAIDEN_LEVEL_ADDR, levelSettingValue);
-
-            // Make sure this block is only executed once.
-            sLevelDelayCounter += 1;
          }
-         // TODO: Might be better to poll score, instead of time.
       }
    }
    return 0;
@@ -228,8 +220,6 @@ void bigp_shutdown()
    sOnLoadEvent = INVALID;
    bigpemu_unregister_event(pMod, sOnEmuFrame);
    sOnEmuFrame = INVALID;
-
-   sLevelDelayCounter = -1;
 
    sLivesSettingHandle = INVALID;
    sBombsSettingHandle = INVALID;
