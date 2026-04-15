@@ -328,6 +328,9 @@ static int sPocUnusedAnimationSettingHandle = INVALID;
 // Work in progress (WIP) settings
 static int sWipModelGunAsTurretSettingHandle = INVALID;
 
+// Settings used to simply display information.
+static int sTeleporterSettingHandle = INVALID;
+
 static int sItemsInitializedInRAM = 0;
 static int sEnemyModelReplacedInRAM = 0;
 
@@ -2570,6 +2573,9 @@ void bigp_init()
    const int wipModelGunAsCatHandle = bigpemu_register_setting_category(pMod, "Highlander WIP Model Gun As");
    sWipModelGunAsTurretSettingHandle = bigpemu_register_setting_bool(wipModelGunAsCatHandle, "Turret", 0);
 
+   const int infoHandle = bigpemu_register_setting_category(pMod, "Highlander Info");
+   sTeleporterSettingHandle = bigpemu_register_setting_bool(infoHandle, "Press 7 Key For Teleporter", 1);
+
    sOnInputFrameEvent = bigpemu_register_event_input_frame(pMod, on_input_frame);
    sOnLoadEvent = bigpemu_register_event_sw_loaded(pMod, on_sw_loaded);
    sOnEmuFrame = bigpemu_register_event_emu_thread_frame(pMod, on_emu_frame);
@@ -2635,6 +2641,8 @@ void bigp_shutdown()
    sPocModelHoodAsDundeeBSettingHandle = INVALID;
    sPocModelHoodAsDundeeDSettingHandle = INVALID;
    sPocUnusedAnimationSettingHandle = INVALID;
+
+   sWipModelGunAsTurretSettingHandle = INVALID;
 
    sWipModelGunAsTurretSettingHandle = INVALID;
 
